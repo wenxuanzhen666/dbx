@@ -36,6 +36,10 @@ async function logout() {
     // The navigation below is the recovery path — surface nothing.
   } finally {
     auth.reset();
+    // Keep the mounted StartupGate in sync before the full-page fallback runs.
+    // App also has legacy local auth flags, so resetting Pinia alone can leave
+    // the workspace visible without its user identity if navigation is delayed.
+    window.dispatchEvent(new Event("dbx:auth-expired"));
     window.location.replace(webPath("/login"));
   }
 }

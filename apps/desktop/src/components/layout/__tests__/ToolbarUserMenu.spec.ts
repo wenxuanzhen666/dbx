@@ -21,6 +21,7 @@ const webAuthMocks = vi.hoisted(() => ({ logout: vi.fn() }));
 let root: HTMLDivElement;
 let mountedApp: ReturnType<typeof createApp> | undefined;
 let replaceMock: ReturnType<typeof vi.fn>;
+let authExpiredMock: ReturnType<typeof vi.fn>;
 
 function applyUser(overrides: Record<string, unknown> = {}) {
   const auth = useAuthStore();
@@ -61,10 +62,13 @@ beforeEach(() => {
   webAuthMocks.logout.mockReset();
   webAuthMocks.logout.mockResolvedValue(undefined);
   replaceMock = vi.fn();
+  authExpiredMock = vi.fn();
+  window.addEventListener("dbx:auth-expired", authExpiredMock);
   vi.stubGlobal("location", { pathname: "/", replace: replaceMock });
 });
 
 afterEach(() => {
+  window.removeEventListener("dbx:auth-expired", authExpiredMock);
   mountedApp?.unmount();
   mountedApp = undefined;
   root.remove();
@@ -152,6 +156,7 @@ describe("ToolbarUserMenu", () => {
     await vi.waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/login"));
 
     expect(webAuthMocks.logout).toHaveBeenCalledTimes(1);
+    expect(authExpiredMock).toHaveBeenCalledTimes(1);
     expect(auth.authenticated).toBe(false);
     expect(auth.user).toBeNull();
   });
